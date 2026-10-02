@@ -1,0 +1,26 @@
+# Blueprint de Render (https://render.com/docs/blueprint-spec)
+# Nota: Render no ejecuta Ollama; OLLAMA_BASE_URL debe apuntar a una instancia accesible por red.
+# El disco de Render es efímero: monta un Persistent Disk en backend/data para conservar SQLite y PDFs.
+services:
+  - type: web
+    name: rag-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 1 --threads 8 -b 0.0.0.0:$PORT app:app
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: OLLAMA_BASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+  - type: web
+    name: rag-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false

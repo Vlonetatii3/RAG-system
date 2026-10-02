@@ -1,0 +1,27 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Datos
+*.db
+*.db-journal
+backend/data/uploads/*
+!backend/data/uploads/.gitkeep
+
+# Env
+.env
+.env.prod
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Especificación original del proyecto (documentos de trabajo, no se versionan)
+RAG_SPEC.md
+RAG_IMPLEMENTATION_CHECKLIST.md
+API_EXAMPLES_AND_TESTS.md
+README_QUICK_START.md

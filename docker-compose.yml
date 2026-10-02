@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  # Ollama - LLM local con soporte de embeddings
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=4
+      - OLLAMA_NUM_THREAD=8
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: serve
+
+  # PostgreSQL (alternativa a SQLite para producción)
+  # Descomentar si quieres usar PostgreSQL en lugar de SQLite
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: rag_postgres
+  #   environment:
+  #     POSTGRES_DB: rag_db
+  #     POSTGRES_USER: rag_user
+  #     POSTGRES_PASSWORD: rag_password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U rag_user"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+  # PgAdmin (UI para PostgreSQL - opcional)
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: rag_pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #   ports:
+  #     - "5050:80"
+  #   depends_on:
+  #     - postgres
+
+volumes:
+  ollama_data:
+    driver: local
+  # postgres_data:
+  #   driver: local
+
+# Instrucciones de uso:
+# 
+# 1. Levanta los servicios:
+#    docker-compose up -d
+#
+# 2. Espera a que Ollama esté healthy:
+#    docker-compose ps
+#
+# 3. Descarga los modelos (en otra terminal):
+#    docker exec rag_ollama ollama pull mistral
+#    docker exec rag_ollama ollama pull nomic-embed-text
+#
+# 4. Verifica que funciona:
+#    curl http://localhost:11434/api/tags
+#
+# 5. Para ver logs:
+#    docker-compose logs -f ollama
+#
+# 6. Para detener:
+#    docker-compose down
+#
+# 7. Para limpiar todo (incluyendo volúmenes):
+#    docker-compose down -v
+
+# NOTAS:
+# - Ollama necesita ~8GB de RAM disponible para modelos de tamaño mediano
+# - Los modelos se descargan la primera vez (mistral ~4GB, nomic-embed-text ~300MB)
+# - Para producción, considera usar PostgreSQL en lugar de SQLite
+# - Los volúmenes persisten datos aunque se elimine el contenedor
