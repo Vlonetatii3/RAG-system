@@ -178,3 +178,34 @@ def test_expand_with_neighbors_completes_split_definitions(db, fake_ollama):
     assert "pigouviano grava la actividad contaminante por un monto igual al costo externo." in passages[0]["text"]
     assert len(passages) == 1  # chunks vecinos del mismo documento se fusionan en un solo pasaje
     assert passages[0]["text"].count("El impuesto pigouviano") == 1  # sin texto duplicado por el solapamiento
+
+
+def test_search_cache_follows_inserts_deletes_and_status(db, fake_ollama):
+    svc, doc1 = _store(db, fake_ollama, ["sol luna"] * 2, "a.pdf")
+    q = svc.generate_embedding("sol luna")
+    assert len(svc.search_similar(q, top_k=10)) == 2  # llena el caché
+
+    # Otro documento con la misma instancia del servicio: el caché debe verlo
+    doc2 = db.execute(
+        "INSERT INTO documents (subject_id, filename, file_path, status) VALUES (?, 'b.pdf', 'x', 'processing')",
+        (db.default_subject_id(),),
+    )
+    svc.save_chunks(doc2, ["sol luna"] * 3, [q] * 3)
+    assert len(svc.search_similar(q, top_k=10)) == 2  # todavía procesando
+    db.execute("UPDATE documents SET status = 'completed' WHERE id = ?", (doc2,))
+    assert len(svc.search_similar(q, top_k=10)) == 5
+
+    db.execute("DELETE FROM chunks WHERE document_id = ?", (doc1,))
+    assert {r["document_id"] for r in svc.search_similar(q, top_k=10)} == {doc2}
+
+
+def test_search_ignores_other_embedding_dimensions(db, fake_ollama):
+    svc, _ = _store(db, fake_ollama, ["sol luna"])
+    assert svc.search_similar([1.0] * 8) == []
+
+
+def test_ocr_can_be_disabled():
+    from services.pdf_processor import PDFProcessor
+
+    assert PDFProcessor(ocr_enabled=False).ocr_enabled is False
+    assert PDFProcessor(ocr_enabled=True).ocr_enabled is True

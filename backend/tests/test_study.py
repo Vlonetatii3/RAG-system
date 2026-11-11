@@ -14,15 +14,15 @@ from tests.test_api import upload, wait_processed
 
 def make_multipage_pdf(path, pages):
     """PDF con una página por elemento de `pages` (lista de listas de líneas)."""
-    from pypdf import PdfWriter, PdfReader
+    import pymupdf
 
-    writer = PdfWriter()
-    for i, lines in enumerate(pages):
-        tmp = f"{path}.{i}.pdf"
-        make_pdf(tmp, lines)
-        writer.add_page(PdfReader(tmp).pages[0])
-    with open(path, "wb") as f:
-        writer.write(f)
+    with pymupdf.open() as out:
+        for i, lines in enumerate(pages):
+            tmp = f"{path}.{i}.pdf"
+            make_pdf(tmp, lines)
+            with pymupdf.open(tmp) as src:
+                out.insert_pdf(src)
+        out.save(path)
     return path
 
 
@@ -44,7 +44,7 @@ def test_split_pages_tracks_page_numbers(tmp_path):
 def test_scanned_pdf_gives_ocr_hint(tmp_path):
     path = make_pdf(str(tmp_path / "scan.pdf"), [])
     with pytest.raises(ValueError, match="OCR"):
-        PDFProcessor().extract_pages(path)
+        PDFProcessor(ocr_enabled=False).extract_pages(path)
 
 
 def test_pages_without_text_are_counted(client, tmp_path):

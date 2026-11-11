@@ -54,7 +54,9 @@ def create_app(config=Config, ollama_service=None) -> Flask:
         "config": config,
         "db": db,
         "ollama": ollama,
-        "pdf_processor": PDFProcessor(),
+        "pdf_processor": PDFProcessor(
+            config.OCR_LANGUAGE, None if config.OCR_MODE == "auto" else config.OCR_MODE in ("1", "true", "yes")
+        ),
         "embeddings": embeddings,
         "rag_service": RAGService(embeddings, ollama, db),
         "study": StudyService(ollama, embeddings, db),
@@ -81,6 +83,9 @@ def create_app(config=Config, ollama_service=None) -> Flask:
     def unhandled(e: Exception):
         logger.exception("Error no controlado")
         return jsonify({"success": False, "error": "Error interno del servidor"}), 500
+
+    if not app.extensions["rag"]["pdf_processor"].ocr_enabled:
+        logger.info("OCR desactivado (Tesseract no instalado): los PDFs escaneados se rechazarán")
 
     if ollama.check_connection():
         for model in (config.OLLAMA_MODEL, config.EMBEDDINGS_MODEL):

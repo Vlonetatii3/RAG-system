@@ -31,6 +31,9 @@ class Config:
     CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
     MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "50"))
     SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.5"))
+    # OCR de páginas escaneadas con Tesseract: "auto" (si está instalado), "true" o "false"
+    OCR_MODE = os.getenv("OCR_MODE", "auto").lower()
+    OCR_LANGUAGE = os.getenv("OCR_LANGUAGE", "spa+eng")
 
     CORS_ORIGINS = [
         o.strip()

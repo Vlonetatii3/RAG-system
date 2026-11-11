@@ -14,7 +14,7 @@ Estudia con tus apuntes en PDF usando una IA que corre en tu PC. Puedes **hacerl
 | **Ordenar por materia** | Cada materia tiene sus PDFs y solo busca en ellos. |
 
 **Para qué no sirve:**
-- **PDFs escaneados** (fotos sin texto seleccionable): la app los detecta y avisa. Antes de subirlos, pásalos por un OCR, por ejemplo Adobe Scan, Google Drive → "Abrir con Documentos" u `ocrmypdf`.
+- **PDFs escaneados** (fotos sin texto seleccionable), salvo que instales [Tesseract](https://github.com/tesseract-ocr/tesseract) con el idioma español: así la app les hace OCR sola (más lento, ~3 s por página). Sin Tesseract los detecta y avisa; pásalos antes por un OCR, por ejemplo Adobe Scan, Google Drive → "Abrir con Documentos" u `ocrmypdf`.
 - **Gráficos y diagramas**: solo lee el texto, no las imágenes.
 - **Reemplazar la lectura**: el modelo acierta la gran mayoría de las veces, pero puede equivocarse. Por eso siempre muestra la página de donde sacó la información.
 
@@ -79,7 +79,7 @@ copy .env.example .env         # Linux/macOS: cp .env.example .env
 **Iniciar** (con Ollama abierto):
 
 - **Windows**: `.\start-all.ps1` abre dos ventanas: backend y frontend. Para detener la app, ciérralas.
-- **Linux/macOS**: `./start-all.sh` (Ctrl+C para detener).
+- **Linux/macOS**: `./start-all.sh` (Ctrl+C para detener). La primera vez crea el entorno virtual e instala las dependencias por su cuenta; también inicia Ollama si no está corriendo y avisa si falta algún modelo.
 
 Luego abre **http://localhost:5173**.
 
@@ -131,7 +131,7 @@ Luego abre **http://localhost:5173**.
 | "Sin backend" arriba a la derecha | El backend no está corriendo. Ábrelo con `.\start-all.ps1` (o `cd backend` y `venv\Scripts\python app.py`). |
 | "Sin Ollama" | Abre Ollama, o ejecuta `ollama serve`. |
 | "Falta un modelo" | El aviso indica qué `ollama pull …` ejecutar. |
-| Un PDF queda en "No se pudo procesar" | Probablemente esté escaneado. El mensaje debajo del nombre explica qué hacer. |
+| Un PDF queda en "No se pudo procesar" | Probablemente esté escaneado. El mensaje debajo del nombre explica qué hacer. Si instalas Tesseract (Windows: [instalador UB-Mannheim](https://github.com/UB-Mannheim/tesseract/wiki), marcando "Spanish"; Linux: `tesseract` + `tesseract-data-spa` o `tesseract-ocr-spa`), reinicia la app y vuelve a subirlo. |
 | Todo va muy lento o la PC se traba | Falta RAM: cierra otras apps, o ejecuta `ollama stop qwen2.5:7b` para liberarla al instante. |
 
 ---
@@ -155,5 +155,5 @@ Tus datos se guardan en `backend/data/` (la base `rag.db` y los PDFs subidos). P
 ## Para desarrolladores
 
 - **Stack:** Flask + SQLite (backend), React + TypeScript + Vite (frontend), Ollama (`qwen2.5:7b` para generar texto y `nomic-embed-text` para embeddings).
-- **Tests:** `cd backend && venv\Scripts\python -m pytest` (42 tests, con Ollama simulado). Para el frontend, `npm run build` hace el type-check.
-- **Código:** `backend/services/` contiene la lógica: `pdf_processor`, `embeddings`, `rag` (chat) y `study` (resúmenes y preguntas). `backend/routes/` contiene la API REST bajo `/api`.
+- **Tests:** `cd backend && venv\Scripts\python -m pytest` (45 tests, con Ollama simulado). Para el frontend, `npm run build` hace el type-check.
+- **Código:** `backend/services/` contiene la lógica: `pdf_processor` (PyMuPDF + OCR opcional con Tesseract), `embeddings` (búsqueda coseno con la matriz de vectores cacheada en memoria), `rag` (chat) y `study` (resúmenes y preguntas). `backend/routes/` contiene la API REST bajo `/api`.
